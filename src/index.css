@@ -16,6 +16,12 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 100px; /* Offsets scroll targeting to clear the sticky navigation header */
+}
+@media (max-width: 1024px) {
+  html {
+    scroll-padding-top: 80px; /* Slightly lower sticky header offset on mobile/tablets */
+  }
 }
 
 body {

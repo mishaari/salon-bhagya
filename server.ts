@@ -130,8 +130,10 @@ Operational instructions:
 
       res.json({ reply: response.text || "I'm happy to help you with our services. Would you like to book a blowout or wedding dress consult?" });
     } catch (err: any) {
-      console.error(err);
-      res.json({ reply: "I'm having a small connection issue, dear! But Salon Bhagya is open Tue-Sun 9AM - 6:30PM. You can reach us on +94 77 123 4567 or submit our booking form to secure your spot!" });
+      console.warn("Gemini execution failed, utilizing luxurious backend local responder:", err);
+      res.json({
+        reply: "Hello dear! I am Salon Bhagya's beauty assistant. I'm experiencing a brief network connection issue, but let me help you! We are open Tue-Sun from 9:00 AM to 6:30 PM (Closed Mon) at No. 120, Kotikawatte Road, Kotikawatte. Our pricing starts at Rs. 1,500 for hair styling and bridal packages from Rs. 45,000. Feel free to use our online scheduling booking form right on this page, or click 'WhatsApp Us' to chat with us instantly!"
+      });
     }
   });
 

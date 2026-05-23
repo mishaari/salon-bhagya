@@ -20,7 +20,8 @@ import {
   Award,
   ShieldCheck,
   Heart,
-  Briefcase
+  Briefcase,
+  AlertCircle
 } from "lucide-react";
 import { SERVICES, TESTIMONIALS, GALLERY_ITEMS, FAQS, IMAGES } from "./data";
 import { Service, GalleryItem, ChatMessage, AppointmentInput } from "./types";
@@ -49,6 +50,7 @@ export default function App() {
   });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState<any | null>(null);
+  const [bookingError, setBookingError] = useState<string | null>(null);
   const [confirmedAppointments, setConfirmedAppointments] = useState<any[]>([]);
 
   // FAQ open states
@@ -130,6 +132,7 @@ export default function App() {
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBookingSubmitting(true);
+    setBookingError(null);
     try {
       const response = await fetch("/api/appointments", {
         method: "POST",
@@ -150,11 +153,11 @@ export default function App() {
           notes: ""
         });
       } else {
-        alert(data.error || "Something went wrong.");
+        setBookingError(data.error || "Something went wrong.");
       }
     } catch (err) {
       console.error(err);
-      alert("Error sending reservation request to the server.");
+      setBookingError("Error sending reservation request to the server.");
     } finally {
       setBookingSubmitting(false);
     }
@@ -194,7 +197,13 @@ export default function App() {
           history: mappedHistory
         })
       });
+      if (!res.ok) {
+        throw new Error("Chat server error");
+      }
       const data = await res.json();
+      if (!data.reply) {
+        throw new Error("No chat reply in server response");
+      }
       
       setChatbotMessages((prev) => [
         ...prev,
@@ -206,13 +215,64 @@ export default function App() {
         }
       ]);
     } catch (err) {
-      console.error(err);
+      console.error("Chat API error, using secure client-side backup bot:", err);
+      
+      // Intelligent local keyword-based chatbot response generator
+      const getLocalChatResponse = (userMsg: string): string => {
+        const text = userMsg.toLowerCase().trim();
+        
+        if (text.includes("location") || text.includes("address") || text.includes("where") || text.includes("map") || text.includes("find") || text.includes("place") || text.includes("kotikawatte")) {
+          return "Our beautiful salon is situated at **No. 120, Kotikawatte Road, Kotikawatte, Sri Lanka** (near Avissawella Road). 🗺️ You can locate us on Google Maps here: https://maps.app.goo.gl/phGErXDydruremw87";
+        }
+        
+        if (text.includes("price") || text.includes("cost") || text.includes("rate") || text.includes("fee") || text.includes("how much") || text.includes("charge")) {
+          return "Of course, dear! Here are our average prices:\n\n" +
+                 "✨ **Hair Styling:** Trim (Rs. 1,500+), Wash & Blowout (Rs. 2,500+), Updo (Rs. 4,000+)\n" +
+                 "✨ **Hair Coloring:** Root touch-up (Rs. 4,500+), Full dye (Rs. 8,500 - 15,000+)\n" +
+                 "✨ **Bridal Packages:** Traditional Kandyan / Western Saree drapes from Rs. 45,000 to Rs. 150,000\n" +
+                 "✨ **Facials:** Refreshing Clean-up (Rs. 3,000), Dr. Rachel Gold Facial (Rs. 6,500)\n" +
+                 "✨ **Threading & Waxing:** Eyebrow thread (Rs. 300), Full legs wax (Rs. 2,500)\n\n" +
+                 "You can fill out our secure booking scheduler on the page to lock in your slot!";
+        }
+        
+        if (text.includes("hour") || text.includes("time") || text.includes("open") || text.includes("when") || text.includes("close") || text.includes("day") || text.includes("schedule")) {
+          return "We open **Tuesday to Sunday from 9:00 AM to 6:30 PM**. ⏰ We are closed on Mondays. Booking an appointment is highly recommended to secure your preferred slot, dear!";
+        }
+        
+        if (text.includes("hair") || text.includes("cut") || text.includes("style") || text.includes("blow") || text.includes("dry") || text.includes("color") || text.includes("dye") || text.includes("straight") || text.includes("keratin") || text.includes("relax")) {
+          return "We offer premium hair treatments! Services include custom stylish trims (Rs. 1,500+), luxury full coloring (Rs. 8,500+), root touch-ups (Rs. 4,500+), and premium Keratin hair restructuring (Rs. 18,000+). Feel free to use our online dynamic booking form!";
+        }
+        
+        if (text.includes("bridal") || text.includes("wedding") || text.includes("bride") || text.includes("saree") || text.includes("dress") || text.includes("kandyan")) {
+          return "Congratulations, darling! 👰‍♀️ Safe traditional saree drapes (including Kandyan) and Western wedding styling are our specialties. Our bridal packages range from Rs. 45,000 to Rs. 150,000. Book a bridal consultation today via our booking form!";
+        }
+        
+        if (text.includes("facial") || text.includes("skin") || text.includes("clean") || text.includes("glow") || text.includes("whitening")) {
+          return "We do exquisite, eye-safe skin care, dear! Try our basic skin clean-ups for Rs. 3,000 or the deep face brightening/Dr. Rachel Gold facial for Rs. 6,500.";
+        }
+        
+        if (text.includes("manicure") || text.includes("pedicure") || text.includes("nail") || text.includes("mani") || text.includes("pedi") || text.includes("gel")) {
+          return "Our mani-pedi treatments are ultra-relaxing and hygienic! A classic Mani-Pedi is Rs. 4,500 and we offer high-durability UV Gel polish for Rs. 2,500.";
+        }
+        
+        if (text.includes("phone") || text.includes("number") || text.includes("contact") || text.includes("whatsapp") || text.includes("call")) {
+          return "You can reach us at **+94 77 123 4567** or click 'WhatsApp Us' at the top/bottom of our page to chat with our staff directly! 💬";
+        }
+        
+        if (text.includes("hello") || text.includes("hi") || text.includes("hey") || text.includes("sluh") || text.includes("good morning") || text.includes("good afternoon") || text.includes("ayubowan")) {
+          return "Hello darling! Ayubowan! I am Salon Bhagya's virtual front-desk beauty bot. Ask me anything about our hair cuts, hair coloring, bridal saree draping packages, pricing, or salon timings! 🌸";
+        }
+        
+        return "I'm having a brief server connection issue, dear, but let me help! Our Salon in Kotikawatte is open Tue-Sun 9:00 AM - 6:30 PM (Closed Mon), pricing starts at Rs. 1,500 for trims, and bridal packages from Rs. 45,000. You can reach us directly on +94 77 123 4567!";
+      };
+
+      const localResponse = getLocalChatResponse(rawMessage);
       setChatbotMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: "model",
-          text: "I experienced a small connection issue, dear! But our experts can answer immediately if you call us at +94 77 123 4567 or tap the WhatsApp button below.",
+          text: localResponse,
           timestamp: new Date()
         }
       ]);
@@ -221,16 +281,24 @@ export default function App() {
     }
   };
 
+  const handleScrollToSection = (sectionId: string) => {
+    setMobileMenuOpen(false);
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   const selectServiceAndScroll = (serviceName: string) => {
     setBookingForm((prev) => ({
       ...prev,
       service: serviceName
     }));
-    document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" });
+    handleScrollToSection("booking");
   };
 
   return (
-    <div className="min-h-screen relative font-sans text-[#2D2D2D] select-none bg-[#FDFBF7] overflow-x-hidden">
+    <div className="min-h-screen relative font-sans text-[#2D2D2D] bg-[#FDFBF7] overflow-x-hidden">
 
       {/* Elegant drifting gold background blobs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden -z-20">
@@ -264,11 +332,10 @@ export default function App() {
         <span>Grand Bridal & Hair Restructuring Season 2026 — Book your bridal glow consultation today!</span>
       </div>
 
-      {/* STICKY STUNNING GLASS NAVIGATION HEADER */}
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "glass shadow-sm border-b border-white/60"
+          scrolled || mobileMenuOpen
+            ? "glass shadow-sm border-b border-white/60 bg-[#FDFBF7]/95"
             : "bg-transparent border-b border-transparent"
         }`}
       >
@@ -279,8 +346,8 @@ export default function App() {
             <span className="font-serif text-2xl sm:text-3xl font-semibold tracking-wider uppercase text-[#2D2D2D] group-hover:text-[#C5A059] transition-colors duration-200">
               Bhagya Salon<span className="text-[#C5A059] font-normal leading-none font-serif italic text-3xl">.</span>
             </span>
-            <span className="text-[10px] tracking-[0.25em] text-[#3D332D] uppercase font-mono mt-0.5 font-semibold">
-              Premium Ladies Salon • Kotikawatte
+            <span className="text-[9px] sm:text-[10px] tracking-[0.14em] sm:tracking-[0.25em] text-[#3D332D] uppercase font-mono mt-0.5 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
+              Premium Ladies Salon <span className="hidden sm:inline">• Kotikawatte</span>
             </span>
           </a>
 
@@ -296,7 +363,11 @@ export default function App() {
               <a
                 key={link.id}
                 href={`#${link.id}`}
-                className={`text-sm tracking-widest uppercase font-mono transition-all duration-200 relative py-1.5 ${
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleScrollToSection(link.id);
+                }}
+                className={`text-sm tracking-widest uppercase font-mono transition-all duration-200 relative py-1.5 cursor-pointer ${
                   activeSection === link.id
                     ? "text-[#C5A059] font-medium scale-105"
                     : "text-[#6E5D53] hover:text-[#2D2D2D]"
@@ -332,8 +403,12 @@ export default function App() {
 
             <a
               href="#booking"
+              onClick={(e) => {
+                e.preventDefault();
+                handleScrollToSection("booking");
+              }}
               id="nav-booking-cta"
-              className="bg-[#C5A059] hover:bg-[#B38F48] text-white text-xs font-mono tracking-widest uppercase font-semibold px-5.5 py-3 rounded-full transition-all duration-300 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md"
+              className="hidden sm:inline-flex bg-[#C5A059] hover:bg-[#B38F48] text-white text-xs font-mono tracking-widest uppercase font-semibold px-5.5 py-3 rounded-full transition-all duration-300 items-center gap-2 hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md cursor-pointer"
             >
               <Calendar className="w-3.5 h-3.5" />
               <span>Book Appointment</span>
@@ -344,7 +419,7 @@ export default function App() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               id="mobile-menu-toggle"
               aria-label="Toggle Navigation Menu"
-              className="lg:hidden p-2.5 rounded-lg border border-[#F5F0EB] text-[#2D2D2D] hover:bg-[#F5F0EB] transition-colors"
+              className="lg:hidden p-2.5 rounded-lg border border-[#F5F0EB] text-[#2D2D2D] hover:bg-[#F5F0EB] transition-colors cursor-pointer"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -358,9 +433,9 @@ export default function App() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden bg-[#FDFBF7]/95 backdrop-blur-md border-b border-[#F5F0EB]"
+              className="lg:hidden absolute top-full left-0 right-0 w-full bg-[#FDFBF7]/98 backdrop-blur-md border-b border-[#F5F0EB] shadow-2xl z-50 overflow-y-auto max-h-[80vh]"
             >
-              <ul className="px-4 pt-2 pb-6 space-y-3 font-mono text-xs tracking-widest uppercase">
+              <ul className="px-5 py-6 space-y-3 font-mono text-xs tracking-widest uppercase text-left">
                 {[
                   { id: "services", label: "Our Services" },
                   { id: "about", label: "Signature Touch" },
@@ -371,10 +446,13 @@ export default function App() {
                   <li key={item.id}>
                     <a
                       href={`#${item.id}`}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`block py-3 px-4 rounded-lg transition-colors ${
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleScrollToSection(item.id);
+                      }}
+                      className={`block py-3 px-4 rounded-lg transition-colors cursor-pointer ${
                         activeSection === item.id
-                          ? "bg-[#F5F0EB] text-[#C5A059] font-semibold"
+                          ? "bg-[#F5F0EB] text-[#C5A059] font-extrabold"
                           : "text-[#6E5D53] hover:bg-white/50 hover:text-[#2D2D2D]"
                       }`}
                     >
@@ -387,7 +465,7 @@ export default function App() {
                   <a
                     href="https://wa.me/94771234567"
                     target="_blank"
-                    className="flex-1 text-center py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center justify-center gap-2"
+                    className="flex-1 text-center py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm"
                   >
                     <span>Chat on WhatsApp</span>
                   </a>
@@ -430,8 +508,12 @@ export default function App() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
                 <a
                   href="#booking"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleScrollToSection("booking");
+                  }}
                   id="hero-booking-btn"
-                  className="bg-[#C5A059] hover:bg-[#B38F48] text-white text-xs sm:text-sm font-mono tracking-widest uppercase font-bold px-8 py-4 px-10 rounded-full transition-all duration-300 flex items-center justify-center gap-3 group shadow-md hover:shadow-xl hover:scale-[1.03] border border-white/20"
+                  className="bg-[#C5A059] hover:bg-[#B38F48] text-white text-xs sm:text-sm font-mono tracking-widest uppercase font-bold px-8 py-4 px-10 rounded-full transition-all duration-300 flex items-center justify-center gap-3 group shadow-md hover:shadow-xl hover:scale-[1.03] border border-white/20 cursor-pointer"
                 >
                   <span>Book Your Spot Now</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
@@ -1149,6 +1231,20 @@ export default function App() {
                       <p className="text-xs text-[#6E5D53] mt-1">Please fill in details. We do not require credit-card numbers. Pure offline transparency.</p>
                     </div>
 
+                    {bookingError && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-rose-50 border border-rose-200 text-rose-800 text-xs px-4.5 py-3.5 rounded-xl flex items-start gap-3.5 font-mono"
+                      >
+                        <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5 text-rose-600" />
+                        <div className="space-y-0.5 text-left">
+                          <p className="font-bold uppercase tracking-wider text-[10px]">Scheduling Error</p>
+                          <p className="text-[#622929] leading-relaxed font-sans">{bookingError}</p>
+                        </div>
+                      </motion.div>
+                    )}
+
                     <div className="grid sm:grid-cols-2 gap-6">
                       
                       {/* Name Field */}
@@ -1472,7 +1568,7 @@ export default function App() {
               initial={{ opacity: 0, y: 40, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 40, scale: 0.95 }}
-              className="bg-white/95 border border-white/80 rounded-2xl shadow-2xl w-[320px] sm:w-[385px] h-[520px] mb-4 flex flex-col overflow-hidden relative glass"
+              className="bg-white/95 border border-white/80 rounded-2xl shadow-2xl w-[calc(100vw-32px)] sm:w-[385px] h-[480px] sm:h-[520px] mb-4 flex flex-col overflow-hidden relative glass"
               id="beauty-chatbot-dialog"
             >
               
