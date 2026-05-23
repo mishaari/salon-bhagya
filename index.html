@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Salon Bhagya | Premium Ladies' Beauty Salon Kotikawatte Sri Lanka</title>
+    <script>
+      // Catch and gracefully handle/ignore sandbox iframe WebSocket and HMR failures
+      window.addEventListener('unhandledrejection', function(event) {
+        if (event.reason && (
+          event.reason.message === 'WebSocket closed without opened.' ||
+          (typeof event.reason === 'string' && (event.reason.includes('WebSocket') || event.reason.includes('websocket'))) ||
+          (event.reason.stack && (event.reason.stack.toLowerCase().includes('websocket') || event.reason.stack.toLowerCase().includes('hmr')))
+        )) {
+          event.preventDefault();
+        }
+      });
+
+      // Ultra-robust global fetch wrapper patch.
+      // Intercepts getter-only restrictions on sandboxed environment frames.
+      // Prevents "Uncaught TypeError: Cannot set property fetch of #<Window> which has only a getter"
+      // across any standard global scope references (window, globalThis, self).
+      (function() {
+        const nativeFetch = window.fetch || globalThis.fetch || self.fetch;
+        if (!nativeFetch) return;
+
+        let activeFetch = nativeFetch;
+
+        function patchObject(obj, prop) {
+          try {
+            if (!obj) return;
+            // Try deleting first which can loosen non-configurable own properties on Proxies/DOM bindings
+            try {
+              delete obj[prop];
+            } catch (e) {}
+
+            Object.defineProperty(obj, prop, {
+              get() {
+                return activeFetch;
+              },
+              set(val) {
+                activeFetch = val;
+              },
+              configurable: true,
+              enumerable: true
+            });
+          } catch (err) {
+            console.warn(`Could not redefine ${prop} on standard object:`, err);
+          }
+        }
+
+        patchObject(window, 'fetch');
+        patchObject(globalThis, 'fetch');
+        patchObject(self, 'fetch');
+        if (typeof Window !== 'undefined' && Window.prototype) {
+          patchObject(Window.prototype, 'fetch');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

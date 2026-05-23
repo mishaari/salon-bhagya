@@ -1,0 +1,6 @@
+{
+  "name": "Salon Bhagya",
+  "description": "Premium ladies' beauty salon located in Kotikawatte, Sri Lanka. Elegant hair care, bridal dressing, facials, skin care, makeup services and custom appointments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
